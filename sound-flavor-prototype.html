@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>多味觉一致性/不一致性测试原型</title>
+
+  <!-- p5.js & p5.sound 官方 CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #222;
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 24px auto;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 20px 22px 24px;
+      box-sizing: border-box;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 14px;
+    }
+
+    .status-text {
+      font-size: 13px;
+      color: #555;
+      min-height: 18px;
+      margin-bottom: 8px;
+    }
+
+    .status-text.hidden {
+      visibility: hidden;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 14px 0 8px;
+    }
+
+    .control-group {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: #fafafa;
+      border: 1px solid #eee;
+    }
+
+    .control-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .control-main-label {
+      font-weight: 600;
+    }
+
+    .control-desc {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+      line-height: 1.5;
+    }
+
+    .control-range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #555;
+      margin-top: 4px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin: 4px 0 0;
+    }
+
+    .buttons-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .primary-button,
+    .secondary-button {
+      border-radius: 4px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .primary-button {
+      background: #1a73e8;
+      color: #fff;
+    }
+
+    .secondary-button {
+      background: #e0e0e0;
+      color: #222;
+    }
+
+    .primary-button:disabled,
+    .secondary-button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .bottom-info {
+      font-size: 12px;
+      color: #444;
+      margin-top: 14px;
+      padding-top: 8px;
+      border-top: 1px solid #eee;
+      line-height: 1.6;
+    }
+
+    .param-line {
+      margin: 2px 0;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 4px;
+    }
+
+    .nav-tab {
+      padding: 6px 14px;
+      border-radius: 16px;
+      border: none;
+      background: #e0e0e0;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .nav-tab.active {
+      background: #1a73e8;
+      color: #fff;
+    }
+
+    .sub-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 4px 0 10px;
+    }
+
+    .sub-tab {
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      background: #fafafa;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .sub-tab.active {
+      background: #1a73e8;
+      color: #fff;
+      border-color: #1a73e8;
+    }
+
+    .placeholder {
+      font-size: 13px;
+      color: #777;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="title">声音调味一致性/不一致性测试</div>
+  <div class="subtitle" id="subtitleText">当前：一致性测试 · 甜味测试（sweet.mp3）</div>
+
+  <!-- 顶部导航：一致性 / 不一致性 -->
+  <div class="nav-tabs">
+    <button id="tabConsistent" class="nav-tab active">一致性测试</button>
+    <button id="tabInconsistent" class="nav-tab">不一致性测试</button>
+  </div>
+
+  <!-- 一致性测试内容 -->
+  <div id="consistentPane">
+    <!-- 子菜单：甜味 / 苦味 -->
+    <div class="sub-tabs">
+      <button id="subSweet" class="sub-tab active">甜味测试 (sweet.mp3)</button>
+      <button id="subBitter" class="sub-tab">苦味测试 (bitter.mp3)</button>
+    </div>
+
+    <div id="statusText" class="status-text hidden"></div>
+
+    <div class="section-title">播放控制</div>
+    <div class="control-group">
+      <div class="buttons-row">
+        <button id="playToggleBtn" class="primary-button">播放 / 暂停</button>
+        <button id="resetBtn" class="secondary-button">重置为中性设定</button>
+      </div>
+    </div>
+
+    <div class="section-title" id="filterTitle">频率滤波参数</div>
+
+    <!-- 1. 频率滤波（甜味：高通；苦味：低通） -->
+    <div class="control-group">
+      <div class="control-label-row">
+        <span class="control-main-label" id="filterLabel">高通滤波频率（High-Pass Cutoff）</span>
+        <span id="filterValueLabel" style="font-size: 13px;">当前：900 Hz</span>
+      </div>
+      <div class="control-desc" id="filterDesc">
+        300Hz - 1500Hz：提升明亮度与“提纯”高频质感；过低偏厚重（靠近苦味），过高偏单薄刺耳（靠近酸味）。
+      </div>
+      <input id="filterSlider" type="range" min="300" max="1500" step="1" value="900">
+      <div class="control-range-labels" id="filterRangeLabels">
+        <span id="filterLeftLabel">300Hz：略带厚重感</span>
+        <span id="filterMidLabel">约900Hz：中性甜味</span>
+        <span id="filterRightLabel">1500Hz：高频提纯、偏清亮</span>
+      </div>
+    </div>
+
+    <!-- 2. 混响干湿比 & 衰减 -->
+    <div class="control-group">
+      <div class="control-label-row">
+        <span class="control-main-label">混响干湿比 & 衰减（Reverb Wet & Decay）</span>
+        <span id="reverbLabel" style="font-size: 13px;">当前：Wet 40% · Decay 3.2s</span>
+      </div>
+      <div class="control-desc" id="reverbDesc">
+        Wet 20%–60%，Decay 2.0s–4.5s：适度长混响增加圆润与包裹感；过多会掩盖细节，降低“甜味音色”辨识度。
+      </div>
+      <input id="reverbSlider" type="range" min="0" max="100" step="1" value="50">
+      <div class="control-range-labels">
+        <span id="reverbLeftLabel">偏干（质感清晰，风味较收敛）</span>
+        <span id="reverbMidLabel">平衡区（圆润且清晰）</span>
+        <span id="reverbRightLabel">偏湿（包裹感强，细节略减）</span>
+      </div>
+    </div>
+
+    <!-- 3. 播放速率 -->
+    <div class="control-group">
+      <div class="control-label-row">
+        <span class="control-main-label">播放速率（Playback Rate）</span>
+        <span id="rateLabel" style="font-size: 13px;">当前：1.00x</span>
+      </div>
+      <div class="control-desc" id="rateDesc">
+        0.95x–1.15x：微调心理节奏。1.05x–1.15x 更灵动愉悦（偏甜味奖励感），高于 1.20x 则偏向酸味清爽刺激。
+      </div>
+      <input id="rateSlider" type="range" min="0.95" max="1.15" step="0.001" value="1.00">
+      <div class="control-range-labels">
+        <span>0.95x：略放慢</span>
+        <span>1.00x：中性</span>
+        <span>1.15x：更明快</span>
+      </div>
+    </div>
+
+    <div class="bottom-info">
+      <div class="param-line" id="filterInfo">滤波截止频率：900 Hz</div>
+      <div class="param-line" id="reverbInfo">混响：Wet 40%，Decay 3.2s</div>
+      <div class="param-line" id="rateInfo">播放速率：1.00x</div>
+    </div>
+  </div>
+
+  <!-- 不一致性测试内容（占位，暂不实现逻辑） -->
+  <div id="inconsistentPane" style="display:none;">
+    <div class="section-title">不一致性测试</div>
+    <div class="placeholder">
+      此处为不一致性测试模块的占位区域。<br>
+      未来将在此添加：甜味 / 苦味等条件下的反向跨模态映射测试界面。
+    </div>
+  </div>
+</div>
+
+<script>
+  /***** ========= 核心参数定义：一致性甜味/苦味实验 ========= *****/
+  const MODE_SWEET = 'sweet';
+  const MODE_BITTER = 'bitter';
+
+  // 频率滤波参数（两种味觉共用数值区间）
+  const FILTER_MIN = 300;
+  const FILTER_MAX = 1500;
+  const FILTER_DEFAULT = 900;
+
+  // 混响区间：Wet 20%–60%，Decay 2.0s–4.5s
+  const WET_MIN = 0.20;
+  const WET_MAX = 0.60;
+  const DECAY_MIN = 2.0;
+  const DECAY_MAX = 4.5;
+  const REVERB_POS_DEFAULT = 50; // 0–100 中的中点
+
+  // 播放速率
+  const RATE_MIN = 0.95;
+  const RATE_MAX = 1.15;
+  const RATE_DEFAULT = 1.00;
+
+  // 状态提示持续时间
+  const STATUS_DURATION_MS = 2000;
+
+  /***** ========= 全局状态 ========= *****/
+  let sweetSound, bitterSound;    // 独立加载的音频
+  let activeSound = null;         // 当前活跃音频指针
+  let lpFilter, hpFilter, reverb; // 滤波与混响
+
+  let currentTestType = 'congruent'; // 当前测试类别：一致性 / 不一致性（目前只用在 UI 上）
+  let currentMode = MODE_SWEET;      // 当前味觉模式：甜味 / 苦味
+
+  let isPlaying = false;
+
+  let currentFilterCutoff = FILTER_DEFAULT;
+  let currentWet = (WET_MIN + WET_MAX) / 2;
+  let currentDecay = (DECAY_MIN + DECAY_MAX) / 2;
+  let currentRate = RATE_DEFAULT;
+
+  // DOM 引用
+  let statusTextEl, subtitleTextEl;
+  let tabConsistentEl, tabInconsistentEl;
+  let consistentPaneEl, inconsistentPaneEl;
+  let subSweetEl, subBitterEl;
+
+  let filterSlider, reverbSlider, rateSlider;
+  let filterLabelEl, filterValueLabelEl, filterDescEl;
+  let filterLeftLabelEl, filterMidLabelEl, filterRightLabelEl;
+  let reverbLabelEl, rateLabelEl;
+  let filterInfoEl, reverbInfoEl, rateInfoEl;
+
+  let playToggleBtn, resetBtn;
+
+  let statusTimeoutId = null;
+
+  /***** ========= p5.js 加载阶段 ========= *****/
+  function preload() {
+    sweetSound = loadSound('assets/sweet.mp3');
+    bitterSound = loadSound('assets/bitter.mp3');
+  }
+
+  /***** ========= p5.js 入口 ========= *****/
+  function setup() {
+    let c = createCanvas(1, 1);
+    c.hide();
+
+    // 建立甜/苦两套并行的滤镜链路
+    hpFilter = new p5.HighPass(); // 甜味用
+    lpFilter = new p5.LowPass();  // 苦味用
+    reverb = new p5.Reverb();
+    reverb.set(currentDecay, 0.2);
+
+    setupUI();
+    switchTaste(MODE_SWEET); // 默认进入甜味模式
+    applyAllParams();
+
+    if (sweetSound) {
+      sweetSound.onended(() => {
+        isPlaying = false;
+        if (playToggleBtn) playToggleBtn.textContent = '播放 / 暂停';
+      });
+    }
+    if (bitterSound) {
+      bitterSound.onended(() => {
+        isPlaying = false;
+        if (playToggleBtn) playToggleBtn.textContent = '播放 / 暂停';
+      });
+    }
+  }
+
+  function draw() {
+    // 无视觉动画
+    background(255);
+  }
+
+  /***** ========= UI 控件 ========= *****/
+  function setupUI() {
+    subtitleTextEl = document.getElementById('subtitleText');
+    statusTextEl = document.getElementById('statusText');
+
+    tabConsistentEl = document.getElementById('tabConsistent');
+    tabInconsistentEl = document.getElementById('tabInconsistent');
+    consistentPaneEl = document.getElementById('consistentPane');
+    inconsistentPaneEl = document.getElementById('inconsistentPane');
+
+    subSweetEl = document.getElementById('subSweet');
+    subBitterEl = document.getElementById('subBitter');
+
+    filterSlider = document.getElementById('filterSlider');
+    reverbSlider = document.getElementById('reverbSlider');
+    rateSlider = document.getElementById('rateSlider');
+
+    filterLabelEl = document.getElementById('filterLabel');
+    filterValueLabelEl = document.getElementById('filterValueLabel');
+    filterDescEl = document.getElementById('filterDesc');
+    filterLeftLabelEl = document.getElementById('filterLeftLabel');
+    filterMidLabelEl = document.getElementById('filterMidLabel');
+    filterRightLabelEl = document.getElementById('filterRightLabel');
+
+    reverbLabelEl = document.getElementById('reverbLabel');
+    rateLabelEl = document.getElementById('rateLabel');
+
+    filterInfoEl = document.getElementById('filterInfo');
+    reverbInfoEl = document.getElementById('reverbInfo');
+    rateInfoEl = document.getElementById('rateInfo');
+
+    playToggleBtn = document.getElementById('playToggleBtn');
+    resetBtn = document.getElementById('resetBtn');
+
+    // 顶部 Tab：一致性 / 不一致性
+    tabConsistentEl.addEventListener('click', () => {
+      currentTestType = 'congruent';
+      tabConsistentEl.classList.add('active');
+      tabInconsistentEl.classList.remove('active');
+      consistentPaneEl.style.display = '';
+      inconsistentPaneEl.style.display = 'none';
+      updateSubtitle();
+    });
+
+    tabInconsistentEl.addEventListener('click', () => {
+      currentTestType = 'incongruent';
+      tabInconsistentEl.classList.add('active');
+      tabConsistentEl.classList.remove('active');
+      consistentPaneEl.style.display = 'none';
+      inconsistentPaneEl.style.display = '';
+      updateSubtitle();
+    });
+
+    // 子菜单：甜味 / 苦味
+    subSweetEl.addEventListener('click', () => {
+      if (currentMode !== MODE_SWEET) {
+        switchTaste(MODE_SWEET);
+      }
+    });
+    subBitterEl.addEventListener('click', () => {
+      if (currentMode !== MODE_BITTER) {
+        switchTaste(MODE_BITTER);
+      }
+    });
+
+    // 滑块事件
+    filterSlider.addEventListener('input', () => {
+      currentFilterCutoff = parseFloat(filterSlider.value);
+      applyFilter();
+      updateTexts();
+      const label = currentMode === MODE_SWEET ? '滤波频率（高通）' : '滤波频率（低通）';
+      showStatus(`${label} 调整为 ${Math.round(currentFilterCutoff)} Hz`);
+    });
+
+    reverbSlider.addEventListener('input', () => {
+      const pos = parseFloat(reverbSlider.value) / 100.0; // 0~1
+      currentWet = lerp(WET_MIN, WET_MAX, pos);
+      currentDecay = lerp(DECAY_MIN, DECAY_MAX, pos);
+      applyReverb();
+      updateTexts();
+      showStatus(`混响调整为 Wet ${Math.round(currentWet * 100)}% · Decay ${currentDecay.toFixed(2)}s`);
+    });
+
+    rateSlider.addEventListener('input', () => {
+      currentRate = parseFloat(rateSlider.value);
+      applyRate();
+      updateTexts();
+      showStatus(`播放速率调整为 ${currentRate.toFixed(3)}x`);
+    });
+
+    // 播放 / 暂停
+    playToggleBtn.addEventListener('click', () => {
+      if (!isPlaying) {
+        startPlayback();
+      } else {
+        pausePlayback();
+      }
+    });
+
+    // 重置为中性设定
+    resetBtn.addEventListener('click', () => {
+      resetToDefault();
+      showStatus('参数已重置为当前模式的中性设定');
+    });
+
+    // 初始文案
+    updateSubtitle();
+    updateTexts();
+  }
+
+  /***** ========= 切换味觉模式（甜味/苦味） ========= *****/
+  function switchTaste(mode) {
+    // 停止当前播放
+    if (activeSound && activeSound.isPlaying()) {
+      activeSound.stop();
+      isPlaying = false;
+      playToggleBtn.textContent = '播放 / 暂停';
+    }
+
+    currentMode = mode;
+
+    if (mode === MODE_SWEET) {
+      activeSound = sweetSound;
+      if (activeSound) {
+        activeSound.disconnect();
+        activeSound.connect(hpFilter); // 甜味：高通链路
+        reverb.process(hpFilter);
+      }
+      subSweetEl.classList.add('active');
+      subBitterEl.classList.remove('active');
+    } else if (mode === MODE_BITTER) {
+      activeSound = bitterSound;
+      if (activeSound) {
+        activeSound.disconnect();
+        activeSound.connect(lpFilter); // 苦味：低通链路
+        reverb.process(lpFilter);
+      }
+      subBitterEl.classList.add('active');
+      subSweetEl.classList.remove('active');
+    }
+
+    applyFilter();
+    applyReverb();
+    applyRate();
+    updateTexts();
+    updateSubtitle();
+  }
+
+  /***** ========= 参数应用函数 ========= *****/
+  function applyFilter() {
+    if (currentMode === MODE_SWEET && hpFilter) {
+      hpFilter.freq(currentFilterCutoff);
+    } else if (currentMode === MODE_BITTER && lpFilter) {
+      lpFilter.freq(currentFilterCutoff);
+    }
+  }
+
+  function applyReverb() {
+    if (reverb) {
+      reverb.set(currentDecay, 0.2);
+      reverb.drywet(currentWet);
+    }
+  }
+
+  // 使用 activeSound 修复速率控制
+  function applyRate() {
+    if (activeSound) {
+      activeSound.rate(currentRate);
+    }
+  }
+
+  function applyAllParams() {
+    applyFilter();
+    applyReverb();
+    applyRate();
+  }
+
+  /***** ========= 播放控制 ========= *****/
+  function startPlayback() {
+    if (getAudioContext().state !== 'running') {
+      getAudioContext().resume();
+    }
+    if (typeof userStartAudio === 'function') {
+      userStartAudio();
+    }
+
+    if (!activeSound) {
+      showStatus('当前模式音频未初始化');
+      return;
+    }
+
+    if (!activeSound.isLoaded()) {
+      showStatus('音频还在加载中，请稍后再试...');
+      console.warn('Sound not loaded yet.');
+      return;
+    }
+
+    if (!activeSound.isPlaying()) {
+      activeSound.setVolume(1.0);
+      activeSound.loop();
+      isPlaying = true;
+      playToggleBtn.textContent = '暂停';
+      showStatus('音频已开始播放');
+    }
+  }
+
+  function pausePlayback() {
+    if (activeSound && activeSound.isPlaying()) {
+      activeSound.pause();
+    }
+    isPlaying = false;
+    playToggleBtn.textContent = '播放 / 暂停';
+  }
+
+  /***** ========= 重置 ========= *****/
+  function resetToDefault() {
+    currentFilterCutoff = FILTER_DEFAULT;
+    currentRate = RATE_DEFAULT;
+    const midPos = REVERB_POS_DEFAULT / 100.0;
+    currentWet = lerp(WET_MIN, WET_MAX, midPos);
+    currentDecay = lerp(DECAY_MIN, DECAY_MAX, midPos);
+
+    filterSlider.value = currentFilterCutoff;
+    rateSlider.value = currentRate;
+    reverbSlider.value = REVERB_POS_DEFAULT;
+
+    applyAllParams();
+    updateTexts();
+  }
+
+  /***** ========= UI 文本更新 ========= *****/
+  function updateSubtitle() {
+    if (currentTestType === 'incongruent') {
+      subtitleTextEl.textContent = '当前：不一致性测试（功能占位，待实现）';
+      return;
+    }
+    const flavorText = currentMode === MODE_SWEET ? '甜味测试（sweet.mp3）' : '苦味测试（bitter.mp3）';
+    subtitleTextEl.textContent = `当前：一致性测试 · ${flavorText}`;
+  }
+
+  function updateTexts() {
+    // 根据当前模式更新滤波文案
+    if (currentMode === MODE_SWEET) {
+      filterLabelEl.textContent = '高通滤波频率（High-Pass Cutoff）';
+      filterDescEl.textContent = '300Hz - 1500Hz：提升明亮度与“提纯”高频质感；过低偏厚重（靠近苦味），过高偏单薄刺耳（靠近酸味）。';
+      filterLeftLabelEl.textContent = '300Hz：略带厚重感';
+      filterMidLabelEl.textContent = '约900Hz：中性甜味';
+      filterRightLabelEl.textContent = '1500Hz：高频提纯、偏清亮';
+    } else {
+      filterLabelEl.textContent = '低通滤波频率（Low-Pass Cutoff）';
+      filterDescEl.textContent = '300Hz - 1500Hz：通过衰减高频成分强化暗色与厚重质感；截止频率越低，整体越闷、越偏苦。';
+      filterLeftLabelEl.textContent = '300Hz：高频被大量削弱，更闷、更重';
+      filterMidLabelEl.textContent = '约900Hz：中等厚重感';
+      filterRightLabelEl.textContent = '1500Hz：保留更多高频，苦味感减弱';
+    }
+
+    filterValueLabelEl.textContent = `当前：${Math.round(currentFilterCutoff)} Hz`;
+    reverbLabelEl.textContent = `当前：Wet ${Math.round(currentWet * 100)}% · Decay ${currentDecay.toFixed(2)}s`;
+    rateLabelEl.textContent = `当前：${currentRate.toFixed(2)}x`;
+
+    filterInfoEl.textContent = `滤波截止频率：${Math.round(currentFilterCutoff)} Hz`;
+    reverbInfoEl.textContent = `混响：Wet ${Math.round(currentWet * 100)}%，Decay ${currentDecay.toFixed(2)}s`;
+    rateInfoEl.textContent = `播放速率：${currentRate.toFixed(2)}x`;
+  }
+
+  /***** ========= 顶部状态提示 ========= *****/
+  function showStatus(text) {
+    statusTextEl.textContent = text;
+    statusTextEl.classList.remove('hidden');
+
+    if (statusTimeoutId !== null) {
+      clearTimeout(statusTimeoutId);
+    }
+    statusTimeoutId = setTimeout(() => {
+      statusTextEl.classList.add('hidden');
+    }, STATUS_DURATION_MS);
+  }
+</script>
+</body>
+</html>
+

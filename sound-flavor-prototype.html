@@ -189,6 +189,68 @@
       color: #777;
       margin-top: 12px;
     }
+
+    .grid-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 140px);
+      grid-template-rows: repeat(2, 140px);
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .grid-cell {
+      width: 140px;
+      height: 140px;
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 4px;
+      overflow: hidden;
+      transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+      border: 2px solid transparent;
+    }
+
+    .grid-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .grid-cell:hover {
+      box-shadow: 0 0 0 2px #1a73e8;
+      transform: translateY(-1px);
+    }
+
+    .grid-cell.selected {
+      border-color: #1a73e8;
+    }
+
+    .countdown {
+      font-size: 16px;
+      margin-top: 4px;
+    }
+
+    .shake {
+      animation: shake 0.3s linear;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-3px); }
+      100% { transform: translateX(0); }
+    }
   </style>
 </head>
 <body>
@@ -280,12 +342,29 @@
     </div>
   </div>
 
-  <!-- 不一致性测试内容（占位，暂不实现逻辑） -->
+  <!-- 不一致性测试内容 -->
   <div id="inconsistentPane" style="display:none;">
-    <div class="section-title">不一致性测试</div>
+    <div class="section-title">不一致性测试 · 视觉-听觉配对</div>
+    <div class="grid-wrapper">
+      <div class="image-grid" id="mismatchGrid">
+        <div class="grid-cell" id="cell1">
+          <img src="assets/page1/sweet.jpg" alt="sweet">
+        </div>
+        <div class="grid-cell" id="cell2">
+          <img src="assets/page1/sweet-2.jpg" alt="sweet-2">
+        </div>
+        <div class="grid-cell" id="cell3">
+          <img src="assets/page1/sour.jpg" alt="sour">
+        </div>
+        <div class="grid-cell" id="cell4">
+          <img src="assets/page1/bitter.jpg" alt="bitter">
+        </div>
+      </div>
+      <div class="countdown" id="countdownText">倒计时：20 秒</div>
+    </div>
     <div class="placeholder">
-      此处为不一致性测试模块的占位区域。<br>
-      未来将在此添加：甜味 / 苦味等条件下的反向跨模态映射测试界面。
+      鼠标悬停在任意图片上会播放对应声音；点击即为你的选择。<br>
+      正确答案为：sour.jpg 对应的音频（match3.mp3）。倒计时结束后交互会自动停止。
     </div>
   </div>
 </div>
@@ -316,11 +395,12 @@
   const STATUS_DURATION_MS = 2000;
 
   /***** ========= 全局状态 ========= *****/
-  let sweetSound, bitterSound;    // 独立加载的音频
-  let activeSound = null;         // 当前活跃音频指针
+  let sweetSound, bitterSound;    // 一致性：甜/苦
+  let match1Sound, match2Sound, match3Sound, match4Sound; // 不一致性：match1~4.mp3
+  let activeSound = null;         // 当前活跃音频指针（仅一致性模块）
   let lpFilter, hpFilter, reverb; // 滤波与混响
 
-  let currentTestType = 'congruent'; // 当前测试类别：一致性 / 不一致性（目前只用在 UI 上）
+  let currentTestType = 'congruent'; // 当前测试类别：一致性 / 不一致性
   let currentMode = MODE_SWEET;      // 当前味觉模式：甜味 / 苦味
 
   let isPlaying = false;
@@ -331,7 +411,7 @@
   let currentRate = RATE_DEFAULT;
 
   // DOM 引用
-  let statusTextEl, subtitleTextEl;
+  let statusTextEl, subtitleTextEl, containerEl;
   let tabConsistentEl, tabInconsistentEl;
   let consistentPaneEl, inconsistentPaneEl;
   let subSweetEl, subBitterEl;
@@ -344,12 +424,24 @@
 
   let playToggleBtn, resetBtn;
 
+  // 不一致性测试 DOM 与状态
+  let cell1El, cell2El, cell3El, cell4El;
+  let countdownTextEl;
+  let countdownTimerId = null;
+  let countdownRemaining = 20;
+  let mismatchLocked = false;
+
   let statusTimeoutId = null;
 
   /***** ========= p5.js 加载阶段 ========= *****/
   function preload() {
     sweetSound = loadSound('assets/sweet.mp3');
     bitterSound = loadSound('assets/bitter.mp3');
+    // 不一致性测试用音频（均在 assets/page1/）：match1↔sweet.jpg, match2↔sweet-2.jpg, match3↔sour.jpg, match4↔bitter.jpg
+    match1Sound = loadSound('assets/page1/match1.mp3');
+    match2Sound = loadSound('assets/page1/match2.mp3');
+    match3Sound = loadSound('assets/page1/match3.mp3');
+    match4Sound = loadSound('assets/page1/match4.mp3');
   }
 
   /***** ========= p5.js 入口 ========= *****/
@@ -388,6 +480,7 @@
 
   /***** ========= UI 控件 ========= *****/
   function setupUI() {
+    containerEl = document.querySelector('.container');
     subtitleTextEl = document.getElementById('subtitleText');
     statusTextEl = document.getElementById('statusText');
 
@@ -420,6 +513,13 @@
     playToggleBtn = document.getElementById('playToggleBtn');
     resetBtn = document.getElementById('resetBtn');
 
+    // 不一致性测试元素
+    cell1El = document.getElementById('cell1');
+    cell2El = document.getElementById('cell2');
+    cell3El = document.getElementById('cell3');
+    cell4El = document.getElementById('cell4');
+    countdownTextEl = document.getElementById('countdownText');
+
     // 顶部 Tab：一致性 / 不一致性
     tabConsistentEl.addEventListener('click', () => {
       currentTestType = 'congruent';
@@ -427,6 +527,7 @@
       tabInconsistentEl.classList.remove('active');
       consistentPaneEl.style.display = '';
       inconsistentPaneEl.style.display = 'none';
+      stopMismatchInteraction();
       updateSubtitle();
     });
 
@@ -436,6 +537,7 @@
       tabConsistentEl.classList.remove('active');
       consistentPaneEl.style.display = 'none';
       inconsistentPaneEl.style.display = '';
+      startMismatchInteraction();
       updateSubtitle();
     });
 
@@ -494,6 +596,124 @@
     // 初始文案
     updateSubtitle();
     updateTexts();
+  }
+
+  /***** ========= 不一致性测试：交互逻辑 ========= *****/
+  function startMismatchInteraction() {
+    stopMismatchInteraction(); // 先清理旧状态
+    mismatchLocked = false;
+    countdownRemaining = 20;
+    updateCountdownText();
+
+    // 固定映射：sweet.jpg↔match1.mp3, sweet-2.jpg↔match2.mp3, sour.jpg↔match3.mp3, bitter.jpg↔match4.mp3；正确为 sour.jpg(match3)
+    const mapping = [
+      { el: cell1El, sound: match1Sound },   // sweet.jpg -> match1.mp3
+      { el: cell2El, sound: match2Sound },   // sweet-2.jpg -> match2.mp3
+      { el: cell3El, sound: match3Sound },   // sour.jpg -> match3.mp3 (正确)
+      { el: cell4El, sound: match4Sound }   // bitter.jpg -> match4.mp3
+    ];
+
+    mapping.forEach((item, index) => {
+      const el = item.el;
+      const snd = item.sound;
+      if (!el || !snd) return;
+
+      el._hoverHandler = () => {
+        if (mismatchLocked) return;
+        snd.loop();
+      };
+      el._leaveHandler = () => {
+        if (mismatchLocked) return;
+        if (snd.isPlaying()) snd.stop();
+      };
+      el._clickHandler = () => {
+        if (mismatchLocked) return;
+        handleMismatchSelection(index + 1, el, snd);
+      };
+
+      el.addEventListener('mouseenter', el._hoverHandler);
+      el.addEventListener('mouseleave', el._leaveHandler);
+      el.addEventListener('click', el._clickHandler);
+    });
+
+    countdownTimerId = setInterval(() => {
+      countdownRemaining -= 1;
+      updateCountdownText();
+      if (countdownRemaining <= 0) {
+        stopMismatchInteraction();
+      }
+    }, 1000);
+  }
+
+  function stopMismatchInteraction() {
+    mismatchLocked = true;
+    if (countdownTimerId !== null) {
+      clearInterval(countdownTimerId);
+      countdownTimerId = null;
+    }
+    if (countdownTextEl) {
+      countdownTextEl.textContent = '倒计时：0 秒';
+    }
+
+    [match1Sound, match2Sound, match3Sound, match4Sound].forEach(snd => {
+      if (snd && snd.isPlaying()) snd.stop();
+    });
+
+    [cell1El, cell2El, cell3El, cell4El].forEach(el => {
+      if (!el) return;
+      el.classList.remove('selected');
+      if (el._hoverHandler) {
+        el.removeEventListener('mouseenter', el._hoverHandler);
+        el._hoverHandler = null;
+      }
+      if (el._leaveHandler) {
+        el.removeEventListener('mouseleave', el._leaveHandler);
+        el._leaveHandler = null;
+      }
+      if (el._clickHandler) {
+        el.removeEventListener('click', el._clickHandler);
+        el._clickHandler = null;
+      }
+    });
+  }
+
+  function updateCountdownText() {
+    if (!countdownTextEl) return;
+    const val = Math.max(0, countdownRemaining | 0);
+    countdownTextEl.textContent = `倒计时：${val} 秒`;
+  }
+
+  function handleMismatchSelection(index, el, snd) {
+    mismatchLocked = true;
+
+    [match1Sound, match2Sound, match3Sound, match4Sound].forEach(s => {
+      if (!s) return;
+      if (s !== snd && s.isPlaying()) s.stop();
+    });
+    if (!snd.isPlaying()) snd.loop();
+
+    [cell1El, cell2El, cell3El, cell4El].forEach(c => c && c.classList.remove('selected'));
+    el.classList.add('selected');
+
+    if (index === 3) {
+      showStatus('选择正确：sour.jpg 对应 match3.mp3。');
+    } else {
+      showStatus('选择错误，请注意跨模态不一致线索。');
+      triggerShake();
+    }
+
+    if (countdownTimerId !== null) {
+      clearInterval(countdownTimerId);
+      countdownTimerId = null;
+    }
+  }
+
+  function triggerShake() {
+    if (!containerEl) return;
+    containerEl.classList.add('shake');
+    setTimeout(() => {
+      containerEl.classList.remove('shake');
+    }, 350);
   }
 
   /***** ========= 切换味觉模式（甜味/苦味） ========= *****/

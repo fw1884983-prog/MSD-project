@@ -225,6 +225,7 @@
       padding: 0;
     }
 
+    /* Figma 31-44：未点击 = 白底圆 + 黑色播放三角 */
     .play-circle .play-icon {
       width: 0;
       height: 0;
@@ -234,11 +235,50 @@
       margin-left: 2px;
     }
 
+    /* Figma 31-42：点击后 = 白底圆 + 黑色暂停双竖条 */
+    .play-circle .pause-icon {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .play-circle .pause-icon::before,
+    .play-circle .pause-icon::after {
+      content: '';
+      width: 5px;
+      height: 14px;
+      background: #111;
+      border-radius: 1px;
+    }
+    .play-circle.playing .play-icon {
+      display: none;
+    }
+    .play-circle.playing .pause-icon {
+      display: flex;
+    }
+
     .play-line {
       height: 2px;
       flex: 1;
       background: rgba(0,0,0,0.14);
       border-radius: 9999px;
+    }
+
+    /* Replacement 按键：Figma 34-49 红色药丸 */
+    .replacement-btn {
+      background-color: #fc7a7a !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-radius: 42.5px !important;
+      padding: 10px 24px !important;
+      font-family: "Supreme", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      box-shadow: 0 7px 8px rgba(150, 0, 0, 0.35) !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
 
     /* 甜味/苦味子 Tab：Figma MSD-UI 药丸样式 (node 8-141) */
@@ -513,11 +553,12 @@
     <div id="statusText" class="status-text hidden"></div>
 
     <div class="play-row">
-      <button id="playToggleBtn" class="play-circle" aria-label="Play / Pause">
+      <button id="playToggleBtn" class="play-circle" aria-label="Play">
         <span class="play-icon" aria-hidden="true"></span>
+        <span class="pause-icon" aria-hidden="true"></span>
       </button>
       <div class="play-line" aria-hidden="true"></div>
-      <button id="resetBtn" class="secondary-button" style="border-radius:9999px;">Replacement</button>
+      <button id="resetBtn" class="replacement-btn">Replacement</button>
     </div>
 
     <div class="section-title" id="filterTitle" style="margin-top:6px;">Frequency Filter Parameters</div>
@@ -765,13 +806,13 @@
     if (sweetSound) {
       sweetSound.onended(() => {
         isPlaying = false;
-        if (playToggleBtn) playToggleBtn.textContent = '播放 / 暂停';
+        updatePlayButtonState(false);
       });
     }
     if (bitterSound) {
       bitterSound.onended(() => {
         isPlaying = false;
-        if (playToggleBtn) playToggleBtn.textContent = '播放 / 暂停';
+        updatePlayButtonState(false);
       });
     }
   }
@@ -1221,7 +1262,7 @@
     if (activeSound && activeSound.isPlaying()) {
       activeSound.stop();
       isPlaying = false;
-      playToggleBtn.textContent = '播放 / 暂停';
+      updatePlayButtonState(false);
     }
 
     currentMode = mode;
@@ -1283,6 +1324,17 @@
   }
 
   /***** ========= 播放控制 ========= *****/
+  function updatePlayButtonState(playing) {
+    if (!playToggleBtn) return;
+    if (playing) {
+      playToggleBtn.classList.add('playing');
+      playToggleBtn.setAttribute('aria-label', 'Pause');
+    } else {
+      playToggleBtn.classList.remove('playing');
+      playToggleBtn.setAttribute('aria-label', 'Play');
+    }
+  }
+
   function startPlayback() {
     if (getAudioContext().state !== 'running') {
       getAudioContext().resume();
@@ -1306,7 +1358,7 @@
       activeSound.setVolume(1.0);
       activeSound.loop();
       isPlaying = true;
-      playToggleBtn.textContent = '暂停';
+      updatePlayButtonState(true);
       showStatus('音频已开始播放');
     }
   }
@@ -1316,7 +1368,7 @@
       activeSound.pause();
     }
     isPlaying = false;
-    playToggleBtn.textContent = '播放 / 暂停';
+    updatePlayButtonState(false);
   }
 
   /***** ========= 重置 ========= *****/

@@ -59,6 +59,11 @@
       font-weight: 600;
       margin: 14px 0 8px;
     }
+    .inconsistent-page2-hint {
+      font-size: 12px;
+      color: #666;
+      margin: 2px 0 10px 0;
+    }
 
     /* Frequency Filter Parameters 整块：Figma 8-157 */
     .filter-params-panel {
@@ -744,6 +749,7 @@
   <!-- 不一致性测试内容 -->
   <div id="inconsistentPane" style="display:none;">
     <div class="section-title" id="inconsistentTitle">不一致性测试 · 视觉-听觉配对</div>
+    <div id="inconsistentPage2Hint" class="inconsistent-page2-hint" style="display:none;">鼠标悬停在图片上会有音效，点击即为确认</div>
 
     <!-- page1：四格选图 -->
     <div id="inconsistentPage1" class="grid-wrapper">
@@ -765,7 +771,7 @@
     </div>
     <div id="inconsistentPage1Hint" class="placeholder">
       鼠标悬停在任意图片上会播放对应声音；点击即为你的选择。<br>
-      正确答案为：sour.jpg 对应的音频（match3.mp3）。倒计时结束后交互会自动停止。
+      选择声音与图片最不相符的一组。倒计时结束后交互会自动停止。
     </div>
 
     <!-- page2：miku 图 + 隐藏圆形判定区 -->
@@ -1128,6 +1134,8 @@
     if (inconsistentPage2El) inconsistentPage2El.classList.remove('visible');
     if (inconsistentPage3El) inconsistentPage3El.classList.remove('visible');
     if (inconsistentTitleEl) inconsistentTitleEl.textContent = '不一致性测试 · 视觉-听觉配对';
+    const page2Hint = document.getElementById('inconsistentPage2Hint');
+    if (page2Hint) page2Hint.style.display = 'none';
   }
 
   function goToPage2() {
@@ -1136,7 +1144,9 @@
     const hint = document.getElementById('inconsistentPage1Hint');
     if (hint) hint.style.display = 'none';
     if (inconsistentPage2El) inconsistentPage2El.classList.add('visible');
-    if (inconsistentTitleEl) inconsistentTitleEl.textContent = '不一致性测试 · 隐藏判定区域';
+    if (inconsistentTitleEl) inconsistentTitleEl.textContent = '寻找与图片产生违和感的声音';
+    const page2Hint = document.getElementById('inconsistentPage2Hint');
+    if (page2Hint) { page2Hint.style.display = ''; page2Hint.textContent = '鼠标悬停在图片上会有音效，点击即为确认'; }
 
     stopPage2Interaction();
     page2Locked = false;
@@ -1228,6 +1238,8 @@
     if (inconsistentPage2El) inconsistentPage2El.classList.remove('visible');
     if (inconsistentPage3El) inconsistentPage3El.classList.add('visible');
     if (inconsistentTitleEl) inconsistentTitleEl.textContent = '不一致性测试 · 结算';
+    const page2Hint = document.getElementById('inconsistentPage2Hint');
+    if (page2Hint) page2Hint.style.display = 'none';
 
     const totalSteps = 2;
     const correctSteps = (inconsistentPage1Correct ? 1 : 0) + (inconsistentPage2CircleClicked ? 1 : 0);

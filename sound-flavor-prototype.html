@@ -141,26 +141,38 @@
       margin: 2px 0;
     }
 
+    /* 顶部切换按钮：Figma 药丸样式 (node 8-133) */
     .nav-tabs {
       display: flex;
       gap: 8px;
       margin-bottom: 12px;
-      border-bottom: 1px solid #e0e0e0;
-      padding-bottom: 4px;
+      border-bottom: none;
+      padding-bottom: 0;
     }
 
     .nav-tab {
-      padding: 6px 14px;
-      border-radius: 16px;
-      border: none;
-      background: #e0e0e0;
-      font-size: 13px;
-      cursor: pointer;
+      padding: 8px 24px !important;
+      height: 36px !important;
+      min-height: 36px !important;
+      box-sizing: border-box !important;
+      border-radius: 9999px !important;
+      border: 1px solid #ffffff !important;
+      background-color: #363636 !important;
+      color: #ffffff !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
 
     .nav-tab.active {
-      background: #1a73e8;
-      color: #fff;
+      background-color: #363636 !important;
+      color: #ffffff !important;
+      border: 1px solid #ffffff !important;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
     }
 
     .sub-tabs {
@@ -169,19 +181,34 @@
       margin: 4px 0 10px;
     }
 
+    /* 甜味/苦味子 Tab：Figma MSD-UI 药丸样式 (node 8-141) */
     .sub-tab {
-      padding: 4px 10px;
-      border-radius: 12px;
-      border: 1px solid #ccc;
-      background: #fafafa;
-      font-size: 12px;
-      cursor: pointer;
+      padding: 8px 22px !important;
+      height: 34px !important;
+      min-height: 34px !important;
+      box-sizing: border-box !important;
+      border-radius: 9999px !important;
+      border: none !important;
+      background-color: #ffffff !important;
+      color: #222222 !important;
+      font-size: 12px !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.16) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease, color 0.15s ease !important;
+    }
+
+    .sub-tab:hover {
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22) !important;
+      transform: translateY(-1px);
     }
 
     .sub-tab.active {
-      background: #1a73e8;
-      color: #fff;
-      border-color: #1a73e8;
+      box-shadow: 0 7px 16px rgba(0, 0, 0, 0.28) !important;
+      transform: translateY(-1px);
     }
 
     .placeholder {
@@ -321,6 +348,87 @@
       white-space: pre-line;
       text-align: center;
     }
+
+    /* 一致性测试：Synesthesia Assessment 结果面板 */
+    .assessment-box {
+      margin-top: 10px;
+      padding: 16px 18px;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .assessment-box.visible {
+      display: flex;
+    }
+    .assessment-total {
+      min-width: 120px;
+      text-align: center;
+    }
+    .assessment-total-score {
+      font-size: 32px;
+      font-weight: 700;
+      color: #4caf50;
+    }
+    .assessment-total-score.mid {
+      color: #f9a825;
+    }
+    .assessment-total-score.low {
+      color: #d93025;
+    }
+    .assessment-total-label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+    .assessment-chart {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      border-left: 1px solid #ddd;
+      padding-left: 16px;
+    }
+    .assessment-bar {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+      color: #666;
+    }
+    .assessment-bar-fill {
+      width: 24px;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, #81c784, #a5d6a7);
+      height: 0;
+      transition: height 0.6s ease, opacity 0.6s ease;
+      opacity: 0.9;
+    }
+    .assessment-bar-fill.mid {
+      background: linear-gradient(180deg, #ffb74d, #ffe082);
+    }
+    .assessment-bar-fill.low {
+      background: linear-gradient(180deg, #ef5350, #ef9a9a);
+    }
+    .assessment-bar-percent {
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    .assessment-bar-label {
+      margin-top: 4px;
+      text-align: center;
+    }
+    .assessment-feedback {
+      min-width: 120px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+    }
   </style>
 </head>
 <body>
@@ -357,12 +465,10 @@
     <!-- 1. 频率滤波（甜味：高通；苦味：低通） -->
     <div class="control-group">
       <div class="control-label-row">
-        <span class="control-main-label" id="filterLabel">高通滤波频率（High-Pass Cutoff）</span>
-        <span id="filterValueLabel" style="font-size: 13px;">当前：900 Hz</span>
+        <span class="control-main-label" id="filterLabel">Filter Cutoff</span>
+        <span id="filterValueLabel" style="font-size: 13px;">650 Hz</span>
       </div>
-      <div class="control-desc" id="filterDesc">
-        300Hz - 1500Hz：提升明亮度与“提纯”高频质感；过低偏厚重（靠近苦味），过高偏单薄刺耳（靠近酸味）。
-      </div>
+      <div class="control-desc" id="filterDesc"></div>
       <input id="filterSlider" type="range" min="300" max="1500" step="1" value="900">
       <div class="control-range-labels" id="filterRangeLabels">
         <span id="filterLeftLabel">300Hz：略带厚重感</span>
@@ -374,12 +480,10 @@
     <!-- 2. 混响干湿比 & 衰减 -->
     <div class="control-group">
       <div class="control-label-row">
-        <span class="control-main-label">混响干湿比 & 衰减（Reverb Wet & Decay）</span>
-        <span id="reverbLabel" style="font-size: 13px;">当前：Wet 40% · Decay 3.2s</span>
+        <span class="control-main-label">Reverb Wet &amp; Decay</span>
+        <span id="reverbLabel" style="font-size: 13px;">Wet 40% · Decay 3.2s</span>
       </div>
-      <div class="control-desc" id="reverbDesc">
-        甜味：Wet 20%–60%；苦味：Wet 10%–50%。Decay 2.0s–4.5s：适度长混响增加或削弱圆润感，影响口感联想。
-      </div>
+      <div class="control-desc" id="reverbDesc"></div>
       <input id="reverbSlider" type="range" min="0" max="100" step="1" value="50">
       <div class="control-range-labels">
         <span id="reverbLeftLabel">偏干（质感清晰，风味较收敛）</span>
@@ -391,12 +495,10 @@
     <!-- 3. 播放速率 -->
     <div class="control-group">
       <div class="control-label-row">
-        <span class="control-main-label">播放速率（Playback Rate）</span>
-        <span id="rateLabel" style="font-size: 13px;">当前：1.00x</span>
+        <span class="control-main-label">Playback Rate</span>
+        <span id="rateLabel" style="font-size: 13px;">1.00x</span>
       </div>
-      <div class="control-desc" id="rateDesc">
-        0.95x–1.15x：微调心理节奏。1.05x–1.15x 更灵动愉悦（偏甜味奖励感），高于 1.20x 则偏向酸味清爽刺激。
-      </div>
+      <div class="control-desc" id="rateDesc"></div>
       <input id="rateSlider" type="range" min="0.95" max="1.15" step="0.001" value="1.00">
       <div class="control-range-labels">
         <span>0.95x：略放慢</span>
@@ -414,9 +516,32 @@
     <!-- 一致性测试参数灵敏度检定 -->
     <div class="control-group">
       <div class="buttons-row">
-        <button id="evaluateBtn" class="secondary-button">检定当前参数灵敏度</button>
+        <button id="evaluateBtn" class="secondary-button">Synesthesia Sensitivity Assessment</button>
       </div>
-      <div class="bottom-info" id="evaluateResult" style="margin-top:8px;"></div>
+      <div id="evaluateResult" class="assessment-box">
+        <div class="assessment-total">
+          <div id="assessmentTotalScore" class="assessment-total-score">0%</div>
+          <div class="assessment-total-label">TOTAL SCORE</div>
+        </div>
+        <div class="assessment-chart">
+          <div class="assessment-bar">
+            <div id="barHpPercent" class="assessment-bar-percent">0%</div>
+            <div id="barHpFill" class="assessment-bar-fill"></div>
+            <div class="assessment-bar-label">Filter</div>
+          </div>
+          <div class="assessment-bar">
+            <div id="barRevPercent" class="assessment-bar-percent">0%</div>
+            <div id="barRevFill" class="assessment-bar-fill"></div>
+            <div class="assessment-bar-label">Reverb</div>
+          </div>
+          <div class="assessment-bar">
+            <div id="barRatePercent" class="assessment-bar-percent">0%</div>
+            <div id="barRateFill" class="assessment-bar-fill"></div>
+            <div class="assessment-bar-label">Rate</div>
+          </div>
+        </div>
+        <div id="assessmentFeedback" class="assessment-feedback"></div>
+      </div>
     </div>
   </div>
 
@@ -518,7 +643,9 @@
   let filterInfoEl, reverbInfoEl, rateInfoEl;
 
   let playToggleBtn, resetBtn, evaluateBtn;
-  let evaluateResultEl;
+  let evaluateResultEl, assessmentTotalScoreEl, assessmentFeedbackEl;
+  let barHpFillEl, barRevFillEl, barRateFillEl;
+  let barHpPercentEl, barRevPercentEl, barRatePercentEl;
 
   // 不一致性测试 DOM 与状态（page1）
   let cell1El, cell2El, cell3El, cell4El;
@@ -629,6 +756,14 @@
     resetBtn = document.getElementById('resetBtn');
     evaluateBtn = document.getElementById('evaluateBtn');
     evaluateResultEl = document.getElementById('evaluateResult');
+    assessmentTotalScoreEl = document.getElementById('assessmentTotalScore');
+    assessmentFeedbackEl = document.getElementById('assessmentFeedback');
+    barHpFillEl = document.getElementById('barHpFill');
+    barRevFillEl = document.getElementById('barRevFill');
+    barRateFillEl = document.getElementById('barRateFill');
+    barHpPercentEl = document.getElementById('barHpPercent');
+    barRevPercentEl = document.getElementById('barRevPercent');
+    barRatePercentEl = document.getElementById('barRatePercent');
 
     // 不一致性测试元素（page1）
     cell1El = document.getElementById('cell1');
@@ -1206,10 +1341,55 @@
 
     const overall = Math.round((hpScore + revScore + rateScore) / 3);
 
-    evaluateResultEl.innerHTML =
-      `当前模式：${modeLabel}一致性测试<br>` +
-      `总体灵敏度：<strong>${overall}%</strong><br>` +
-      `频率维度：${hpScore}%　混响维度：${revScore}%　速率维度：${rateScore}%`;
+    // 显示白色结算面板
+    evaluateResultEl.classList.add('visible');
+
+    // 设置总分
+    if (assessmentTotalScoreEl) {
+      assessmentTotalScoreEl.textContent = `${overall}%`;
+      assessmentTotalScoreEl.classList.remove('mid', 'low');
+    }
+
+    // 条形图颜色根据整体分数略微调整
+    const barClass =
+      overall >= 90 ? '' :
+      overall >= 60 ? 'mid' :
+      'low';
+    [barHpFillEl, barRevFillEl, barRateFillEl].forEach(el => {
+      if (!el) return;
+      el.classList.remove('mid', 'low');
+      if (barClass) el.classList.add(barClass);
+    });
+
+    // 初始化条形高度为 0，然后触发动画到目标高度
+    const maxHeight = 80; // px
+    const applyBar = (elFill, elText, score) => {
+      if (!elFill || !elText) return;
+      elFill.style.height = '0px';
+      elText.textContent = `${score}%`;
+      setTimeout(() => {
+        const h = (score / 100) * maxHeight;
+        elFill.style.height = `${h}px`;
+      }, 50);
+    };
+
+    applyBar(barHpFillEl, barHpPercentEl, hpScore);
+    applyBar(barRevFillEl, barRevPercentEl, revScore);
+    applyBar(barRateFillEl, barRatePercentEl, rateScore);
+
+    // 右侧文案：根据总分切换
+    if (assessmentFeedbackEl) {
+      if (overall >= 90) {
+        assessmentFeedbackEl.textContent = 'CONGRATULATION !!  You have a strong synesthetic association sense.';
+        assessmentTotalScoreEl && assessmentTotalScoreEl.classList.remove('mid', 'low');
+      } else if (overall >= 60) {
+        assessmentFeedbackEl.textContent = 'NOT BAD !!  Your mapping is close, with room to refine.';
+        assessmentTotalScoreEl && assessmentTotalScoreEl.classList.add('mid');
+      } else {
+        assessmentFeedbackEl.textContent = 'KEEP IT UP !!  Current mapping is weak, you can keep training.';
+        assessmentTotalScoreEl && assessmentTotalScoreEl.classList.add('low');
+      }
+    }
   }
 
   /***** ========= 顶部状态提示 ========= *****/

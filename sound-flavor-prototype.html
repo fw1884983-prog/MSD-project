@@ -251,6 +251,76 @@
       75% { transform: translateX(-3px); }
       100% { transform: translateX(0); }
     }
+
+    /* page2：方形可见区 + 隐藏圆形判定区 */
+    .page2-wrapper {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .page2-wrapper.visible {
+      display: flex;
+    }
+    .page2-image-box {
+      width: 400px;
+      height: 300px;
+      background: #e8e8e8;
+      background-size: cover;
+      background-position: center;
+      background-image: url('assets/page2/miku.png');
+      position: relative;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .page2-hit-circle {
+      position: absolute;
+      left: 12%;
+      top: 12%;
+      width: 22%;
+      height: 0;
+      padding-bottom: 22%;
+      border-radius: 50%;
+      opacity: 0;
+      cursor: default;
+      pointer-events: auto;
+    }
+    .page2-hit-circle.disabled {
+      pointer-events: none;
+    }
+
+    .page3-wrapper {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 16px;
+      padding: 20px;
+      background: #fafafa;
+      border-radius: 8px;
+      border: 1px solid #eee;
+    }
+    .page3-wrapper.visible {
+      display: flex;
+    }
+    .page3-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .page3-rate {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a73e8;
+      margin-bottom: 12px;
+    }
+    .page3-detail {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.8;
+      white-space: pre-line;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -344,8 +414,10 @@
 
   <!-- 不一致性测试内容 -->
   <div id="inconsistentPane" style="display:none;">
-    <div class="section-title">不一致性测试 · 视觉-听觉配对</div>
-    <div class="grid-wrapper">
+    <div class="section-title" id="inconsistentTitle">不一致性测试 · 视觉-听觉配对</div>
+
+    <!-- page1：四格选图 -->
+    <div id="inconsistentPage1" class="grid-wrapper">
       <div class="image-grid" id="mismatchGrid">
         <div class="grid-cell" id="cell1">
           <img src="assets/page1/sweet.jpg" alt="sweet">
@@ -362,9 +434,24 @@
       </div>
       <div class="countdown" id="countdownText">倒计时：20 秒</div>
     </div>
-    <div class="placeholder">
+    <div id="inconsistentPage1Hint" class="placeholder">
       鼠标悬停在任意图片上会播放对应声音；点击即为你的选择。<br>
       正确答案为：sour.jpg 对应的音频（match3.mp3）。倒计时结束后交互会自动停止。
+    </div>
+
+    <!-- page2：miku 图 + 隐藏圆形判定区 -->
+    <div id="inconsistentPage2" class="page2-wrapper">
+      <div class="page2-image-box" id="page2ImageBox">
+        <div class="page2-hit-circle" id="page2HitCircle"></div>
+      </div>
+      <div class="countdown" id="page2CountdownText">倒计时：20 秒</div>
+    </div>
+
+    <!-- page3：结算界面 -->
+    <div id="inconsistentPage3" class="page3-wrapper">
+      <div class="page3-title">不一致性测试 · 结算</div>
+      <div class="page3-rate" id="page3RateText">成功率：0%</div>
+      <div class="page3-detail" id="page3DetailText"></div>
     </div>
   </div>
 </div>
@@ -424,12 +511,31 @@
 
   let playToggleBtn, resetBtn;
 
-  // 不一致性测试 DOM 与状态
+  // 不一致性测试 DOM 与状态（page1）
   let cell1El, cell2El, cell3El, cell4El;
   let countdownTextEl;
   let countdownTimerId = null;
   let countdownRemaining = 20;
   let mismatchLocked = false;
+
+  // page2：双音源 + 基于距离的实时过渡
+  let inconsistentPage1El, inconsistentPage2El, inconsistentTitleEl;
+  let page2ImageBoxEl, page2HitCircleEl, page2CountdownTextEl;
+  let oscSweet = null, oscBitter = null, page2LowPass = null;
+  let page2CountdownTimerId = null;
+  let page2CountdownRemaining = 20;
+  let page2Locked = false;
+  const PAGE2_FREQ_SWEET = 800;
+  const PAGE2_FREQ_BITTER = 200;
+  const PAGE2_AMP_MAX = 0.3;
+  const PAGE2_LOWPASS_FREQ = 600;
+  const PAGE2_RAMP_AMP = 0.02;
+  const PAGE2_RAMP_FREQ = 0.05;
+
+  // 不一致性测试：page1/page2 结果，用于 page3 结算
+  let inconsistentPage1Correct = false;
+  let inconsistentPage2CircleClicked = false;
+  let inconsistentPage3El, page3RateTextEl, page3DetailTextEl;
 
   let statusTimeoutId = null;
 
@@ -513,12 +619,21 @@
     playToggleBtn = document.getElementById('playToggleBtn');
     resetBtn = document.getElementById('resetBtn');
 
-    // 不一致性测试元素
+    // 不一致性测试元素（page1）
     cell1El = document.getElementById('cell1');
     cell2El = document.getElementById('cell2');
     cell3El = document.getElementById('cell3');
     cell4El = document.getElementById('cell4');
     countdownTextEl = document.getElementById('countdownText');
+    inconsistentPage1El = document.getElementById('inconsistentPage1');
+    inconsistentPage2El = document.getElementById('inconsistentPage2');
+    inconsistentTitleEl = document.getElementById('inconsistentTitle');
+    page2ImageBoxEl = document.getElementById('page2ImageBox');
+    page2HitCircleEl = document.getElementById('page2HitCircle');
+    page2CountdownTextEl = document.getElementById('page2CountdownText');
+    inconsistentPage3El = document.getElementById('inconsistentPage3');
+    page3RateTextEl = document.getElementById('page3RateText');
+    page3DetailTextEl = document.getElementById('page3DetailText');
 
     // 顶部 Tab：一致性 / 不一致性
     tabConsistentEl.addEventListener('click', () => {
@@ -528,6 +643,7 @@
       consistentPaneEl.style.display = '';
       inconsistentPaneEl.style.display = 'none';
       stopMismatchInteraction();
+      stopPage2Interaction();
       updateSubtitle();
     });
 
@@ -537,6 +653,8 @@
       tabConsistentEl.classList.remove('active');
       consistentPaneEl.style.display = 'none';
       inconsistentPaneEl.style.display = '';
+      stopPage2Interaction();
+      showInconsistentPage1();
       startMismatchInteraction();
       updateSubtitle();
     });
@@ -641,8 +759,171 @@
       updateCountdownText();
       if (countdownRemaining <= 0) {
         stopMismatchInteraction();
+        goToPage2();
       }
     }, 1000);
+  }
+
+  function showInconsistentPage1() {
+    inconsistentPage1Correct = false;
+    inconsistentPage2CircleClicked = false;
+    if (inconsistentPage1El) inconsistentPage1El.style.display = '';
+    const hint = document.getElementById('inconsistentPage1Hint');
+    if (hint) hint.style.display = '';
+    if (inconsistentPage2El) inconsistentPage2El.classList.remove('visible');
+    if (inconsistentPage3El) inconsistentPage3El.classList.remove('visible');
+    if (inconsistentTitleEl) inconsistentTitleEl.textContent = '不一致性测试 · 视觉-听觉配对';
+  }
+
+  function goToPage2() {
+    stopMismatchInteraction();
+    if (inconsistentPage1El) inconsistentPage1El.style.display = 'none';
+    const hint = document.getElementById('inconsistentPage1Hint');
+    if (hint) hint.style.display = 'none';
+    if (inconsistentPage2El) inconsistentPage2El.classList.add('visible');
+    if (inconsistentTitleEl) inconsistentTitleEl.textContent = '不一致性测试 · 隐藏判定区域';
+
+    stopPage2Interaction();
+    page2Locked = false;
+    page2CountdownRemaining = 20;
+    if (page2CountdownTextEl) page2CountdownTextEl.textContent = '倒计时：20 秒';
+    if (page2HitCircleEl) page2HitCircleEl.classList.remove('disabled');
+
+    if (getAudioContext().state !== 'running') getAudioContext().resume();
+    if (typeof userStartAudio === 'function') userStartAudio();
+
+    if (!oscSweet) {
+      oscSweet = new p5.Oscillator('sine');
+      oscSweet.freq(PAGE2_FREQ_SWEET);
+      oscSweet.amp(0);
+      oscSweet.start();
+    }
+    if (!oscBitter) {
+      oscBitter = new p5.Oscillator('sawtooth');
+      page2LowPass = new p5.LowPass();
+      page2LowPass.freq(PAGE2_LOWPASS_FREQ);
+      oscBitter.disconnect();
+      oscBitter.connect(page2LowPass);
+      page2LowPass.connect();
+      oscBitter.freq(PAGE2_FREQ_BITTER);
+      oscBitter.amp(0);
+      oscBitter.start();
+    }
+    oscSweet.freq(PAGE2_FREQ_SWEET, 0);
+    oscSweet.amp(PAGE2_AMP_MAX, 0);
+    oscBitter.freq(PAGE2_FREQ_SWEET, 0);
+    oscBitter.amp(0, 0);
+    page2LowPass.freq(PAGE2_LOWPASS_FREQ);
+
+    function updatePage2FromDistance(normalizedDist) {
+      if (page2Locked || !oscSweet || !oscBitter) return;
+      const sweetAmp = map(normalizedDist, 0, 1, 0, PAGE2_AMP_MAX);
+      const bitterAmp = map(normalizedDist, 0, 1, PAGE2_AMP_MAX, 0);
+      const freq = map(normalizedDist, 0, 1, PAGE2_FREQ_BITTER, PAGE2_FREQ_SWEET);
+      oscSweet.amp(sweetAmp, PAGE2_RAMP_AMP);
+      oscBitter.amp(bitterAmp, PAGE2_RAMP_AMP);
+      oscSweet.freq(freq, PAGE2_RAMP_FREQ);
+      oscBitter.freq(freq, PAGE2_RAMP_FREQ);
+    }
+
+    function onPage2MouseMove(e) {
+      if (page2Locked || !page2ImageBoxEl || !page2HitCircleEl) return;
+      const rect = page2HitCircleEl.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const r = Math.min(rect.width, rect.height) / 2;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const normalizedDist = r > 0 ? Math.min(1, distance / r) : 1;
+      updatePage2FromDistance(normalizedDist);
+    }
+
+    function onPage2MouseLeave() {
+      if (page2Locked) return;
+      updatePage2FromDistance(1);
+    }
+
+    page2ImageBoxEl._page2Move = onPage2MouseMove;
+    page2ImageBoxEl._page2Leave = onPage2MouseLeave;
+    page2ImageBoxEl.addEventListener('mousemove', page2ImageBoxEl._page2Move);
+    page2ImageBoxEl.addEventListener('mouseleave', page2ImageBoxEl._page2Leave);
+    updatePage2FromDistance(1);
+
+    function onPage2CircleClick() {
+      if (page2Locked) return;
+      inconsistentPage2CircleClicked = true;
+      stopPage2Interaction();
+      goToPage3();
+    }
+    page2HitCircleEl._page2Click = onPage2CircleClick;
+    page2HitCircleEl.addEventListener('click', page2HitCircleEl._page2Click);
+
+    page2CountdownTimerId = setInterval(() => {
+      page2CountdownRemaining -= 1;
+      if (page2CountdownTextEl) page2CountdownTextEl.textContent = `倒计时：${Math.max(0, page2CountdownRemaining)} 秒`;
+      if (page2CountdownRemaining <= 0) {
+        stopPage2Interaction();
+        goToPage3();
+      }
+    }, 1000);
+  }
+
+  function goToPage3() {
+    if (inconsistentPage2El) inconsistentPage2El.classList.remove('visible');
+    if (inconsistentPage3El) inconsistentPage3El.classList.add('visible');
+    if (inconsistentTitleEl) inconsistentTitleEl.textContent = '不一致性测试 · 结算';
+
+    const totalSteps = 2;
+    const correctSteps = (inconsistentPage1Correct ? 1 : 0) + (inconsistentPage2CircleClicked ? 1 : 0);
+    const rate = totalSteps > 0 ? Math.round((correctSteps / totalSteps) * 100) : 0;
+
+    if (page3RateTextEl) page3RateTextEl.textContent = `成功率：${rate}%`;
+    if (page3DetailTextEl) {
+      const p1 = inconsistentPage1Correct ? '正确' : '未选对';
+      const p2 = inconsistentPage2CircleClicked ? '已点击判定区' : '未点击判定区';
+      page3DetailTextEl.textContent = `Page1 视觉-听觉配对：${p1}\nPage2 隐藏判定区：${p2}`;
+    }
+  }
+
+  function stopPage2Interaction() {
+    page2Locked = true;
+    if (page2CountdownTimerId !== null) {
+      clearInterval(page2CountdownTimerId);
+      page2CountdownTimerId = null;
+    }
+    if (page2CountdownTextEl) page2CountdownTextEl.textContent = '倒计时：0 秒';
+    if (page2HitCircleEl) {
+      page2HitCircleEl.classList.add('disabled');
+      if (page2HitCircleEl._page2Click) {
+        page2HitCircleEl.removeEventListener('click', page2HitCircleEl._page2Click);
+        page2HitCircleEl._page2Click = null;
+      }
+    }
+    if (page2ImageBoxEl) {
+      if (page2ImageBoxEl._page2Move) {
+        page2ImageBoxEl.removeEventListener('mousemove', page2ImageBoxEl._page2Move);
+        page2ImageBoxEl._page2Move = null;
+      }
+      if (page2ImageBoxEl._page2Leave) {
+        page2ImageBoxEl.removeEventListener('mouseleave', page2ImageBoxEl._page2Leave);
+        page2ImageBoxEl._page2Leave = null;
+      }
+    }
+    if (oscSweet) {
+      oscSweet.amp(0, PAGE2_RAMP_AMP);
+      try { oscSweet.stop(); } catch (_) {}
+      oscSweet = null;
+    }
+    if (oscBitter) {
+      oscBitter.amp(0, PAGE2_RAMP_AMP);
+      try { oscBitter.stop(); } catch (_) {}
+      oscBitter = null;
+    }
+    if (page2LowPass) {
+      try { page2LowPass.disconnect(); } catch (_) {}
+      page2LowPass = null;
+    }
   }
 
   function stopMismatchInteraction() {
@@ -699,10 +980,12 @@
     if (index === 3) {
       showStatus('选择正确：sour.jpg 对应 match3.mp3。');
       mismatchLocked = true;
+      inconsistentPage1Correct = true;
       if (countdownTimerId !== null) {
         clearInterval(countdownTimerId);
         countdownTimerId = null;
       }
+      goToPage2();
     } else {
       showStatus('选择错误，请注意跨模态不一致线索。');
       triggerShake(); // 每次点错都触发抖动

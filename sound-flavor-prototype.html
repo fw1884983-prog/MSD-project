@@ -60,6 +60,105 @@
       margin: 14px 0 8px;
     }
 
+    /* Frequency Filter Parameters 整块：Figma 8-157 */
+    .filter-params-panel {
+      margin-top: 14px;
+      position: relative;
+    }
+    .filter-params-title {
+      display: inline-block;
+      background-color: #363636;
+      color: #ffffff;
+      font-family: "Supreme", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 14px 14px 0 0;
+      margin-bottom: 0;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .filter-params-body {
+      background: #ffffff;
+      border-radius: 0 24px 24px 24px;
+      padding: 20px 18px 22px;
+      box-shadow: 0 4px 4px rgba(0,0,0,0.25);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .filter-params-row {
+      margin-bottom: 18px;
+    }
+    .filter-params-row:last-of-type {
+      margin-bottom: 0;
+    }
+    .filter-params-row .control-label-row {
+      margin-bottom: 6px;
+    }
+    .filter-params-row .control-range-labels {
+      font-size: 13px;
+      color: #333;
+      margin-top: 4px;
+    }
+    .filter-params-panel input[type="range"] {
+      margin: 6px 0 0;
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      width: 100%;
+    }
+    .filter-params-panel input[type="range"]::-webkit-slider-runnable-track {
+      height: 10px;
+      border-radius: 5px;
+      background: #e0e0e0;
+    }
+    .filter-params-panel input[type="range"].slider-green::-webkit-slider-runnable-track {
+      background: linear-gradient(to right, #9ee86a 0%, #9ee86a var(--value-percent, 50%), #e0e0e0 var(--value-percent, 50%));
+    }
+    .filter-params-panel input[type="range"].slider-blue::-webkit-slider-runnable-track {
+      background: linear-gradient(to right, #64b5f6 0%, #90caf9 var(--value-percent, 50%), #e0e0e0 var(--value-percent, 50%));
+    }
+    .filter-params-panel input[type="range"].slider-red::-webkit-slider-runnable-track {
+      background: linear-gradient(to right, #ffb74d 0%, #f06292 var(--value-percent, 50%), #e0e0e0 var(--value-percent, 50%));
+    }
+    .filter-params-panel input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #111;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      margin-top: -5px;
+      cursor: pointer;
+    }
+    .filter-params-panel input[type="range"]::-moz-range-track {
+      height: 10px;
+      border-radius: 5px;
+      background: #e0e0e0;
+    }
+    .filter-params-panel input[type="range"].slider-green::-moz-range-track {
+      background: linear-gradient(to right, #9ee86a 0%, #9ee86a var(--value-percent, 50%), #e0e0e0 var(--value-percent, 50%));
+    }
+    .filter-params-panel input[type="range"].slider-blue::-moz-range-track {
+      background: linear-gradient(to right, #64b5f6 0%, #90caf9 var(--value-percent, 50%), #e0e0e0 var(--value-percent, 50%));
+    }
+    .filter-params-panel input[type="range"].slider-red::-moz-range-track {
+      background: linear-gradient(to right, #ffb74d 0%, #f06292 var(--value-percent, 50%), #e0e0e0 var(--value-percent, 50%));
+    }
+    .filter-params-panel input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #111;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    .filter-params-panel .control-desc {
+      display: none;
+    }
+
     .control-group {
       margin-bottom: 14px;
       padding: 10px 12px;
@@ -561,50 +660,46 @@
       <button id="resetBtn" class="replacement-btn">Replacement</button>
     </div>
 
-    <div class="section-title" id="filterTitle" style="margin-top:6px;">Frequency Filter Parameters</div>
-
-    <!-- 1. 频率滤波（甜味：高通；苦味：低通） -->
-    <div class="panel-card">
-      <div class="control-label-row">
-        <span class="control-main-label" id="filterLabel">Filter Cutoff</span>
-        <span id="filterValueLabel" style="font-size: 13px;">650 Hz</span>
-      </div>
-      <div class="control-desc" id="filterDesc"></div>
-      <input id="filterSlider" type="range" min="300" max="1500" step="1" value="900">
-      <div class="control-range-labels" id="filterRangeLabels">
-        <span id="filterLeftLabel">300Hz：略带厚重感</span>
-        <span id="filterMidLabel">约900Hz：中性甜味</span>
-        <span id="filterRightLabel">1500Hz：高频提纯、偏清亮</span>
-      </div>
-    </div>
-
-    <!-- 2. 混响干湿比 & 衰减 -->
-    <div class="panel-card" style="margin-top:12px;">
-      <div class="control-label-row">
-        <span class="control-main-label">Reverb Wet &amp; Decay</span>
-        <span id="reverbLabel" style="font-size: 13px;">Wet 40% · Decay 3.2s</span>
-      </div>
-      <div class="control-desc" id="reverbDesc"></div>
-      <input id="reverbSlider" type="range" min="0" max="100" step="1" value="50">
-      <div class="control-range-labels">
-        <span id="reverbLeftLabel">偏干（质感清晰，风味较收敛）</span>
-        <span id="reverbMidLabel">平衡区（圆润且清晰）</span>
-        <span id="reverbRightLabel">偏湿（包裹感强，细节略减）</span>
-      </div>
-    </div>
-
-    <!-- 3. 播放速率 -->
-    <div class="panel-card" style="margin-top:12px;">
-      <div class="control-label-row">
-        <span class="control-main-label">Playback Rate</span>
-        <span id="rateLabel" style="font-size: 13px;">1.00x</span>
-      </div>
-      <div class="control-desc" id="rateDesc"></div>
-      <input id="rateSlider" type="range" min="0.95" max="1.15" step="0.001" value="1.00">
-      <div class="control-range-labels">
-        <span>0.95x：略放慢</span>
-        <span>1.00x：中性</span>
-        <span>1.15x：更明快</span>
+    <!-- Frequency Filter Parameters：Figma 8-157 整块 -->
+    <div class="filter-params-panel" id="filterParamsPanel">
+      <div class="filter-params-title" id="filterTitle">Frequency Filter Parameters</div>
+      <div class="filter-params-body">
+        <div class="filter-params-row">
+          <div class="control-label-row">
+            <span class="control-main-label" id="filterLabel">Low-Pass Cutoff</span>
+            <span id="filterValueLabel" style="font-size: 13px;">650 Hz</span>
+          </div>
+          <div class="control-desc" id="filterDesc"></div>
+          <input id="filterSlider" class="slider-green" type="range" min="300" max="1500" step="1" value="900">
+          <div class="control-range-labels" id="filterRangeLabels">
+            <span id="filterLeftLabel">300</span>
+            <span id="filterRightLabel">1500</span>
+          </div>
+        </div>
+        <div class="filter-params-row">
+          <div class="control-label-row">
+            <span class="control-main-label">Reverb Wet &amp; Decay</span>
+            <span id="reverbLabel" style="font-size: 13px;">Wet 40% · Decay 3.2s</span>
+          </div>
+          <div class="control-desc" id="reverbDesc"></div>
+          <input id="reverbSlider" class="slider-blue" type="range" min="0" max="100" step="1" value="50">
+          <div class="control-range-labels">
+            <span id="reverbLeftLabel">20</span>
+            <span id="reverbRightLabel">60</span>
+          </div>
+        </div>
+        <div class="filter-params-row">
+          <div class="control-label-row">
+            <span class="control-main-label">Playback Rate</span>
+            <span id="rateLabel" style="font-size: 13px;">1.00x</span>
+          </div>
+          <div class="control-desc" id="rateDesc"></div>
+          <input id="rateSlider" class="slider-red" type="range" min="0.95" max="1.15" step="0.001" value="1.00">
+          <div class="control-range-labels">
+            <span>0.95x</span>
+            <span>1.15x</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -924,6 +1019,7 @@
       currentFilterCutoff = parseFloat(filterSlider.value);
       applyFilter();
       updateTexts();
+      updateSliderFillPercent();
       const label = currentMode === MODE_SWEET ? '滤波频率（高通）' : '滤波频率（低通）';
       showStatus(`${label} 调整为 ${Math.round(currentFilterCutoff)} Hz`);
     });
@@ -937,6 +1033,7 @@
       currentDecay = lerp(DECAY_MIN, DECAY_MAX, pos);
       applyReverb();
       updateTexts();
+      updateSliderFillPercent();
       showStatus(`混响调整为 Wet ${Math.round(currentWet * 100)}% · Decay ${currentDecay.toFixed(2)}s`);
     });
 
@@ -944,6 +1041,7 @@
       currentRate = parseFloat(rateSlider.value);
       applyRate();
       updateTexts();
+      updateSliderFillPercent();
       showStatus(`播放速率调整为 ${currentRate.toFixed(3)}x`);
     });
 
@@ -967,9 +1065,10 @@
       evaluateCurrentSettings();
     });
 
-    // 初始文案
+    // 初始文案与滑块填充色
     updateSubtitle();
     updateTexts();
+    updateSliderFillPercent();
   }
 
   /***** ========= 不一致性测试：交互逻辑 ========= *****/
@@ -1385,6 +1484,7 @@
 
     applyAllParams();
     updateTexts();
+    updateSliderFillPercent();
   }
 
   /***** ========= UI 文本更新 ========= *****/
@@ -1397,23 +1497,34 @@
     subtitleTextEl.textContent = `当前：一致性测试 · ${flavorText}`;
   }
 
+  function updateSliderFillPercent() {
+    if (!filterSlider || !reverbSlider || !rateSlider) return;
+    const fMin = 300, fMax = 1500;
+    const fp = ((parseFloat(filterSlider.value) - fMin) / (fMax - fMin)) * 100;
+    filterSlider.style.setProperty('--value-percent', fp + '%');
+    reverbSlider.style.setProperty('--value-percent', reverbSlider.value + '%');
+    const rMin = 0.95, rMax = 1.15;
+    const rp = ((parseFloat(rateSlider.value) - rMin) / (rMax - rMin)) * 100;
+    rateSlider.style.setProperty('--value-percent', rp + '%');
+  }
+
   function updateTexts() {
     // 根据当前模式更新滤波文案
     if (currentMode === MODE_SWEET) {
-      filterLabelEl.textContent = '高通滤波频率（High-Pass Cutoff）';
+      filterLabelEl.textContent = 'High-Pass Cutoff';
       filterDescEl.textContent = '300Hz - 1500Hz：提升明亮度与“提纯”高频质感；过低偏厚重（靠近苦味），过高偏单薄刺耳（靠近酸味）。';
-      filterLeftLabelEl.textContent = '300Hz：略带厚重感';
-      filterMidLabelEl.textContent = '约900Hz：中性甜味';
-      filterRightLabelEl.textContent = '1500Hz：高频提纯、偏清亮';
+      if (filterLeftLabelEl) filterLeftLabelEl.textContent = '300';
+      if (filterMidLabelEl) filterMidLabelEl.textContent = '';
+      if (filterRightLabelEl) filterRightLabelEl.textContent = '1500';
     } else {
-      filterLabelEl.textContent = '低通滤波频率（Low-Pass Cutoff）';
-      filterDescEl.textContent = '300Hz - 1500Hz：通过衰减高频成分强化暗色与厚重质感；截止频率越低，整体越闷、越偏苦。';
-      filterLeftLabelEl.textContent = '300Hz：高频被大量削弱，更闷、更重';
-      filterMidLabelEl.textContent = '约900Hz：中等厚重感';
-      filterRightLabelEl.textContent = '1500Hz：保留更多高频，苦味感减弱';
+      filterLabelEl.textContent = 'Low-Pass Cutoff';
+      if (filterDescEl) filterDescEl.textContent = '300Hz - 1500Hz：通过衰减高频强化暗色与厚重质感。';
+      if (filterLeftLabelEl) filterLeftLabelEl.textContent = '300';
+      if (filterMidLabelEl) filterMidLabelEl.textContent = '';
+      if (filterRightLabelEl) filterRightLabelEl.textContent = '1500';
     }
 
-    filterValueLabelEl.textContent = `当前：${Math.round(currentFilterCutoff)} Hz`;
+    filterValueLabelEl.textContent = `${Math.round(currentFilterCutoff)} Hz`;
     reverbLabelEl.textContent = `当前：Wet ${Math.round(currentWet * 100)}% · Decay ${currentDecay.toFixed(2)}s`;
     rateLabelEl.textContent = `当前：${currentRate.toFixed(2)}x`;
 

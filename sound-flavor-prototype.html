@@ -684,7 +684,8 @@
   }
 
   function handleMismatchSelection(index, el, snd) {
-    mismatchLocked = true;
+    // 已选对后不再处理后续点击
+    if (mismatchLocked) return;
 
     [match1Sound, match2Sound, match3Sound, match4Sound].forEach(s => {
       if (!s) return;
@@ -697,14 +698,14 @@
 
     if (index === 3) {
       showStatus('选择正确：sour.jpg 对应 match3.mp3。');
+      mismatchLocked = true;
+      if (countdownTimerId !== null) {
+        clearInterval(countdownTimerId);
+        countdownTimerId = null;
+      }
     } else {
       showStatus('选择错误，请注意跨模态不一致线索。');
-      triggerShake();
-    }
-
-    if (countdownTimerId !== null) {
-      clearInterval(countdownTimerId);
-      countdownTimerId = null;
+      triggerShake(); // 每次点错都触发抖动
     }
   }
 

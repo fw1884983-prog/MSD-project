@@ -378,7 +378,7 @@
         <span id="reverbLabel" style="font-size: 13px;">当前：Wet 40% · Decay 3.2s</span>
       </div>
       <div class="control-desc" id="reverbDesc">
-        Wet 20%–60%，Decay 2.0s–4.5s：适度长混响增加圆润与包裹感；过多会掩盖细节，降低“甜味音色”辨识度。
+        甜味：Wet 20%–60%；苦味：Wet 10%–50%。Decay 2.0s–4.5s：适度长混响增加或削弱圆润感，影响口感联想。
       </div>
       <input id="reverbSlider" type="range" min="0" max="100" step="1" value="50">
       <div class="control-range-labels">
@@ -409,6 +409,14 @@
       <div class="param-line" id="filterInfo">滤波截止频率：900 Hz</div>
       <div class="param-line" id="reverbInfo">混响：Wet 40%，Decay 3.2s</div>
       <div class="param-line" id="rateInfo">播放速率：1.00x</div>
+    </div>
+
+    <!-- 一致性测试参数灵敏度检定 -->
+    <div class="control-group">
+      <div class="buttons-row">
+        <button id="evaluateBtn" class="secondary-button">检定当前参数灵敏度</button>
+      </div>
+      <div class="bottom-info" id="evaluateResult" style="margin-top:8px;"></div>
     </div>
   </div>
 
@@ -466,7 +474,7 @@
   const FILTER_MAX = 1500;
   const FILTER_DEFAULT = 900;
 
-  // 混响区间：Wet 20%–60%，Decay 2.0s–4.5s
+      // 混响区间基准：默认用于甜味（20%–60%），苦味在滑块映射中单独调整（10%–50%）
   const WET_MIN = 0.20;
   const WET_MAX = 0.60;
   const DECAY_MIN = 2.0;
@@ -509,7 +517,8 @@
   let reverbLabelEl, rateLabelEl;
   let filterInfoEl, reverbInfoEl, rateInfoEl;
 
-  let playToggleBtn, resetBtn;
+  let playToggleBtn, resetBtn, evaluateBtn;
+  let evaluateResultEl;
 
   // 不一致性测试 DOM 与状态（page1）
   let cell1El, cell2El, cell3El, cell4El;
@@ -618,6 +627,8 @@
 
     playToggleBtn = document.getElementById('playToggleBtn');
     resetBtn = document.getElementById('resetBtn');
+    evaluateBtn = document.getElementById('evaluateBtn');
+    evaluateResultEl = document.getElementById('evaluateResult');
 
     // 不一致性测试元素（page1）
     cell1El = document.getElementById('cell1');
@@ -682,7 +693,10 @@
 
     reverbSlider.addEventListener('input', () => {
       const pos = parseFloat(reverbSlider.value) / 100.0; // 0~1
-      currentWet = lerp(WET_MIN, WET_MAX, pos);
+      // 甜味：20%–60%；苦味：10%–50%
+      const wetMin = currentMode === MODE_SWEET ? 0.20 : 0.10;
+      const wetMax = currentMode === MODE_SWEET ? 0.60 : 0.50;
+      currentWet = lerp(wetMin, wetMax, pos);
       currentDecay = lerp(DECAY_MIN, DECAY_MAX, pos);
       applyReverb();
       updateTexts();
@@ -709,6 +723,11 @@
     resetBtn.addEventListener('click', () => {
       resetToDefault();
       showStatus('参数已重置为当前模式的中性设定');
+    });
+
+    // 一致性测试灵敏度检定
+    evaluateBtn.addEventListener('click', () => {
+      evaluateCurrentSettings();
     });
 
     // 初始文案
@@ -1153,6 +1172,44 @@
     filterInfoEl.textContent = `滤波截止频率：${Math.round(currentFilterCutoff)} Hz`;
     reverbInfoEl.textContent = `混响：Wet ${Math.round(currentWet * 100)}%，Decay ${currentDecay.toFixed(2)}s`;
     rateInfoEl.textContent = `播放速率：${currentRate.toFixed(2)}x`;
+  }
+
+  /***** ========= 一致性测试灵敏度检定 ========= *****/
+  function scoreParam(value, rangeMin, rangeMax, ideal) {
+    const maxDev = Math.max(Math.abs(ideal - rangeMin), Math.abs(rangeMax - ideal));
+    const dev = Math.abs(value - ideal);
+    const norm = Math.max(0, 1 - dev / maxDev);
+    return Math.round(norm * 100);
+  }
+
+  function evaluateCurrentSettings() {
+    if (!evaluateResultEl) return;
+
+    let hpScore = 0;
+    let revScore = 0;
+    let rateScore = 0;
+    let modeLabel = currentMode === MODE_SWEET ? '甜味' : '苦味';
+
+    const wetPercent = currentWet * 100;
+
+    if (currentMode === MODE_SWEET) {
+      // 甜味标准（保持不变）
+      hpScore = scoreParam(currentFilterCutoff, 850, 1300, 1100);
+      revScore = scoreParam(wetPercent, 35, 55, 45);
+      rateScore = scoreParam(currentRate, 1.04, 1.12, 1.08);
+    } else {
+      // 苦味标准（新表：LPF 500–750 / 650、混响 10–25% / 15%、速率 1.00–1.06 / 1.03）
+      hpScore = scoreParam(currentFilterCutoff, 500, 750, 650);
+      revScore = scoreParam(wetPercent, 10, 25, 15);
+      rateScore = scoreParam(currentRate, 1.00, 1.06, 1.03);
+    }
+
+    const overall = Math.round((hpScore + revScore + rateScore) / 3);
+
+    evaluateResultEl.innerHTML =
+      `当前模式：${modeLabel}一致性测试<br>` +
+      `总体灵敏度：<strong>${overall}%</strong><br>` +
+      `频率维度：${hpScore}%　混响维度：${revScore}%　速率维度：${rateScore}%`;
   }
 
   /***** ========= 顶部状态提示 ========= *****/
